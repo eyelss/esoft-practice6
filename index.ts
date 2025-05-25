@@ -5,6 +5,7 @@ interface User {
   id: number;
   name: string;
   // Добавьте свойство email типа string
+  email: string;
 }
 
 // Определите интерфейс для активности пользователя
@@ -12,59 +13,73 @@ interface Activity {
   userId: number;
   activity: string;
   // Добавьте свойство timestamp типа Date
+  timestamp: Date;
 }
 
 // Реализуйте функцию fetchData используя Generic. Функция должна возвращать Promise.
-async function fetchData(url: string) {
+async function fetchData(url: string): Promise<JSON> {
+  return await fetch(url);
   // Реализуйте получение данных с использованием fetch и возвращение их в формате json
 }
 
 // Используйте Utility Types для создания Partial и Readonly версий User и Activity
-type PartialUser = // Заполните тип
-type ReadonlyActivity = // Заполните тип
+type PartialUser = Partial<User>; // Заполните тип
+type ReadonlyActivity = Readonly<User>; // Заполните тип
 
 //Типизируйте функцию. userId - число
-function getUserActivities(userId) {
+function getUserActivities(userId: number): Promise<JSON> {
   return fetchData(`/api/activities/${userId}`);
 }
 // Используйте ReturnType для создания типа возвращаемого значения функции getUserActivities
-type ActivitiesReturnType = // Заполните тип
+type ActivitiesReturnType = ReturnType<typeof getUserActivities>// Заполните тип
 
 // Используйте extends в условных типах для создания типа Permissions
 type AdminPermissions = { canBanUser: boolean };
 type BasicPermissions = { canEditProfile: boolean };
 // Заполните тип. Должен выявляться на основне некоторого дженерика и опредять, какой из пермишенов выдавать: Admin или Basic.
-type Permissions<T> = 
+type Permissions<T> = T extends AdminPermissions ? AdminPermissions : BasicPermissions; 
 
 
 ///ЧАСТЬ 2.
 
 // Определите Type Alias для Union типа String или Number
-type StringOrNumber = // Заполните тип
+type StringOrNumber = string | number;// Заполните тип
 
 // Реализуйте функцию logMessage, которая принимает StringOrNumber и не возвращает значение (void)
 function logMessage(message: StringOrNumber): void {
   // Реализуйте вывод сообщения в консоль
+  console.log(message);
 }
 
 // Реализуйте функцию throwError, которая никогда не возвращает управление (never)
 function throwError(errorMsg: string): never {
   // Бросьте исключение с errorMsg
+  throw new Error(errorMsg);
 }
 
 // Реализуйте Type Guard для проверки, является ли значение строкой
 function isString(value: StringOrNumber): value is string {
   // Верните результат проверки типа
+  return typeof value === 'string';
 }
 
 // Реализуйте функцию assertIsNumber, которая использует asserts для утверждения типа number
 function assertIsNumber(value: any): asserts value is number {
   // Бросьте исключение, если значение не является числом
+  if (typeof value !== 'number') {
+    throwError('Wrong type');
+  }
 }
 
 // Завершите функцию processValue, используя isString и assertIsNumber
 function processValue(value: StringOrNumber) {
   // Реализуйте логику проверки и обработки значения
+  if (isString(value)) {
+    console.log('Value is string!');
+  }
+
+  assertIsNumber(value);
+  console.log('Value is number!');
 }
 
 // Type Alias и Union
@@ -72,11 +87,11 @@ type StringOrNumber = string | number;
 
 
 //сделайте  Type Guard для определения, является ли значение строкой
-function isString(value) {
+function isString(value): value is string {
 }
 
 // создайте asserts function на число.
-function assertIsNumber(value: any): asserts {
+function assertIsNumber(value: any): asserts value is number {
   
 }
 
@@ -100,18 +115,29 @@ function processValue(value: StringOrNumber) {
 
 // Определите Generic интерфейс Response с одним параметром типа T. Второй параметр status: number
 interface Response<T> {
+  data: T;
+  status: number;
 }
 
 // Реализуйте и типизируйте функцию, которая возвращает объект Response для переданных данных
-function createResponse(data, status) {
+function createResponse<T>(data: T, status: number): Response<T> {
   // Реализуйте создание и возврат объекта Response
+  return {
+    data,
+    status,
+  };
 }
 
 // Используйте функцию createResponse для создания ответа с массивом чисел
-const numericResponse = // Заполните вызов функции
+const numericResponse = createResponse([1, 2, 3], 200);// Заполните вызов функции
 
 // Используйте функцию createResponse для создания ответа с объектом пользователя (User)
-const userResponse = // Заполните вызов функции
+const userResponse = createResponse({
+  id: 0,
+  name: 'name',
+  email: 'email',
+  age: 50,
+} as User, 500)// Заполните вызов функции
 //---------------------------------------------------------------------------------
 
   
@@ -133,7 +159,11 @@ type Bike = {
 };
 
 // Создайте Type Guard для проверки, является ли объект автомобилем
-function isCar(vehicle): ????  {
+function isCar(vehicle): vehicle is Car {
+  return typeof vehicle === 'object' &&
+    typeof vehicle.company === 'string' &&
+    typeof vehicle.model === 'string' &&
+    typeof vehicle.year === 'number';
 }
 
 // Используйте Type Guard в функции, которая печатает информацию о транспорте. Небольшая подсказка о том, какие параметры в себя может принимать isCar дана ниже.
@@ -161,14 +191,15 @@ interface Employee {
 }
 
 // Используйте Utility Type для создания типа, который делает все свойства Employee опциональными
-type PartialEmployee = // Заполните тип
+type PartialEmployee = Partial<Employee>;// Заполните тип
 
 // Используйте Utility Type для создания типа, который делает все свойства Employee доступными только для чтения
-type ReadonlyEmployee = // Заполните тип
+type ReadonlyEmployee = Readonly<Employee>// Заполните тип
 
 // Создайте функцию, которая принимает PartialEmployee и выводит информацию о сотруднике
 function printEmployeeInfo(employee: PartialEmployee) {
   // Реализуйте логику функции, обрабатывая случай отсутствующих свойств
+  console.log(`[${employee.id ?? '*'}] ${employee.name ?? 'unnamed'}<${employee.email ?? '*'}>${employee.department !== undefined ? ' at '+employee.department : ''}`);
 }
 //---------------------------------------------------------------------------------
 
@@ -188,16 +219,23 @@ interface User {
 }
 
 // Используйте Indexed Access Types для получения типа поля name из User
-type UserNameType = // Заполните тип
+type UserNameType = User['id']// Заполните тип
 
 // Создайте Mapped Type, который преобразует все поля интерфейса User в boolean. Можно воспользовать конструкцией Key in keyof 
 type UserFieldsToBoolean = {
+  [Key in keyof User]: boolean; 
 }
 
 // Реализуйте функцию, которая принимает ключи интерфейса User и возвращает их типы
-function getUserFieldType(key) {
+function getUserFieldType<TKey extends keyof User>(key: TKey) {
   // Верните тип ключа
-  return 
+  switch (key) {
+    case 'name':
+    case 'email':
+      return 'string';
+    default:
+      return 'number';
+  }
 }
 
 // Используйте эту функцию для получения типа поля 'age' и 'name'
@@ -220,7 +258,7 @@ interface Identifiable {
 }
 
 // Типизируйте функцию, которая принимает массив объектов с ограничением на Generics, где каждый объект должен соответствовать интерфейсу Identifiable. Не забывайте, что find может вернуть undefined
-function findById(items, id ) {
+function findById<T extends Identifiable>(items: T[], id: number): T | undefined {
   return items.find(item => item.id === id);
 }
 
@@ -265,6 +303,18 @@ function findInArray<T, K extends keyof T>(items: T[], key: K, value: T[K]): T |
   return items.find(item => item[key] === value);
 }
 
+// реализация для поиска по нескольким ключам (для пустого объекта вернет первый элемент):
+function findInArrayByKeys<T, K extends keyof T>(items: T[], obj: { [key in K]: T[key] }): T | undefined {
+  return items.find(item => {
+    for (const key in obj) {
+      if (item[key] !== obj[key]) {
+        return false;
+      }
+    }
+    return true;
+  })
+}
+
 // Данные для тестирования функции
 const users: User[] = [
   { id: 1, name: "Alice", age: 25 },
@@ -282,11 +332,11 @@ const books: Book[] = [
 ];
 
 // 1. Найдите пользователя по имени "Alice".
-const foundUser = undefined;
+const foundUser = findInArrayByKeys(users, { name: 'Alice' });
 // 2. Найдите продукт с ценой 500.
-const foundProduct = undefined;
+const foundProduct = findInArrayByKeys(products, { price: 500 });
 // 3. Найдите книгу по автору "Another One".
-const foundBook = undefined;
+const foundBook = findInArrayByKeys(books, { author: 'Another One' });
 //---------------------------------------------------------------------------------
 
 
@@ -313,8 +363,10 @@ interface Adult {
 }
 
 // Напишите функцию mapAndFilter здесь. Используйте два параметра Generic: T для типа входных данных и U для типа выходных данных.
-function mapAndFilter(items, transform, filter) {
-  // Ваш код здесь
+function mapAndFilter<T, U>(items: T[], transform: (v:T)=>U, filter:(v:U)=>boolean): U[] {
+  return items
+    .map(transform)
+    .filter(filter);
 }
 
 // Пример данных
@@ -336,7 +388,16 @@ console.log(adults);
 
 //Вопросы после реализации:
 // Как изменится функция, если необходимо добавить возможность изменения критерия сортировки?
+// !Изменится сигнатура функции: придется передавать callback сравнения соседних элементов коллекции:
+function mapAndFilterAndSort<T, U>(items: T[], transform: (v:T)=>U, filter:(v:U)=>boolean, sort:(a:U,b:U)=>number): U[] {
+  return items
+    .map(transform)
+    .filter(filter)
+    .sort(sort);
+}
 // Могут ли типы T и U быть полностью разными или должны иметь общие характеристики? Объясните ваш ответ.
+// !На обобщенныетипы T и U не распространяются никакие ограничения, 
+// !соответственно могут быть полностью разными и могут иметь общие характеристики.
 
 //---------------------------------------------------------------------------------
 
@@ -371,6 +432,19 @@ type User = {
   };
   hobbies: string[];
 };
+
+type Down<N extends number> =
+  N extends 7 ? 6 :
+  N extends 6 ? 5 :
+  N extends 5 ? 4 :
+  N extends 4 ? 3 :
+  N extends 3 ? 2 :
+  N extends 2 ? 1 :
+  N extends 1 ? 0 : never
+
+type DeepReadonly<T, Depth extends number = 7> = Depth extends 0 ? T : {
+  readonly [K in keyof T]: T[K] extends Object ? DeepReadonly<T[K], Down<Depth>> : T[K]
+}
 
 type DeepReadonlyUser = DeepReadonly<User>;
 /* Результат:
@@ -423,6 +497,10 @@ type DeepReadonlyUser = DeepReadonly<User>;
 // }
 // */
 
+type Promisify<T> = {
+  [K in keyof T]: T[K] extends (...args: any[]) => infer Ret ? (...args: any) => Promise<Ret> : T[K];
+};
+
 
 //---------------------------------------------------------------------------------
 //Задание 11:
@@ -435,6 +513,8 @@ type DeepReadonlyUser = DeepReadonly<User>;
 // Не раскрывает другие типы (например, Array<Promise<string>> остаётся Array<Promise<string>>).
 // Подсказки: почитайте про infer, extends и conditional types
 
+type Awaited<T> = T extends Promise<infer Inner> ? Awaited<Inner> : T;
+
 // Пример использования:
 type Example1 = Awaited<Promise<string>>;         // string
 type Example2 = Awaited<Promise<Promise<number>>>; // number
@@ -442,8 +522,13 @@ type Example3 = Awaited<boolean>;                // boolean (не Promise)
 type Example4 = Awaited<Array<Promise<string>>>; // Array<Promise<string>> (без изменений)
 
 
-Дополнительные задания
+// Дополнительные задания
 // Усложнённая версия: Реализуйте Awaited, который также раскрывает Promise внутри массивов:
+
+type AwaitedDeep<T> = 
+    T extends Promise<infer Inner>[] ? AwaitedDeep<Inner[]> : 
+    T extends Promise<infer Inner> ? AwaitedDeep<Inner> : 
+    T;
 
 type Example = AwaitedDeep<Array<Promise<string>>>; // Array<string>
 // Подсказка: Используйте { [K in keyof T]: Awaited<T[K]> }.
@@ -466,7 +551,7 @@ type Example = AwaitedDeep<Array<Promise<string>>>; // Array<string>
 
 // Учесть вложенные объекты (если нужно).
 
-// Пример:
+// Пример:  
 type UserForm = {
   name: string;
   age?: number;
@@ -475,7 +560,28 @@ type UserForm = {
   };
 };
 
+type StringValidatorType = {
+  isEmail?: boolean;
+  isPassword?: boolean; 
+  minLength?: number;
+  maxLength?: number;
+}
+
+type NumberValidatorType = {
+  isPositive?: boolean;
+  isFloat?: boolean;
+}
+
+type Validator<T> = {
+  [K in keyof T]: T[K] extends object ? Validator<T[K]> : 
+    { required: undefined extends T[K] ? false : true } & 
+    (string extends T[K] ? StringValidatorType : 
+    (number extends T[K] ? NumberValidatorType : 
+    {}));
+}
+
 type UserValidator = Validator<UserForm>;
+
 /* Результат:
 {
   name: { required: true; minLength?: number };
